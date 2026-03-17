@@ -1,70 +1,47 @@
-const express = require("express");
-const cors = require("cors");
+const express = require("express")
+const cors = require("cors")
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const app = express()
 
-let activeCodes = {};
+app.use(cors())
+app.use(express.json())
 
-app.get("/", (req, res) => {
-    res.json({ ok: true, service: "LazyMan API" });
-});
+let connections = {}
 
-// GENERATE CODE (SITE)
-app.post("/plugin/connect-code", (req, res) => {
+app.get("/", (req,res)=>{
+    res.json({ok:true, service:"LazyMan API"})
+})
 
-    const code = "LM-" + Math.floor(10000 + Math.random() * 90000);
+app.post("/plugin/connect", (req,res)=>{
+    const { code } = req.body
 
-    activeCodes[code] = {
-        connected: false
-    };
+    connections[code] = Date.now()
 
-    res.json({
-        ok: true,
-        code
-    });
+    res.json({ok:true})
+})
 
-});
+app.post("/plugin/ping", (req,res)=>{
+    const { code } = req.body
 
-// CONNECT (PLUGIN)
-app.post("/plugin/connect", (req, res) => {
+    connections[code] = Date.now()
 
-    const { code } = req.body;
+    res.json({ok:true})
+})
 
-    if (!activeCodes[code]) {
-        return res.json({
-            ok: false,
-            error: "Invalid code"
-        });
+app.get("/plugin/status", (req,res)=>{
+    const code = req.query.code
+
+    const last = connections[code]
+
+    if(!last){
+        return res.json({connected:false})
     }
 
-    activeCodes[code].connected = true;
+    const alive = Date.now() - last < 15000
 
-    res.json({
-        ok: true,
-        token: Math.random().toString(36)
-    });
+    res.json({connected: alive})
+})
 
-});
-
-// STATUS (SITE POLLING)
-app.get("/plugin/status", (req, res) => {
-
-    const code = req.query.code;
-
-    if (!activeCodes[code]) {
-        return res.json({
-            connected: false
-        });
-    }
-
-    res.json({
-        connected: activeCodes[code].connected
-    });
-
-});
-
-app.listen(3000, () => {
-    console.log("LazyMan API running");
-});
+app.listen(3000, ()=>{
+    console.log("LazyMan API running")
+})
