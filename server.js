@@ -1,64 +1,67 @@
-const express = require("express")
-const cors = require("cors")
+const express = require("express");
+const cors = require("cors");
 
-const app = express()
-app.use(cors())
-app.use(express.json())
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-let connections = {}
+let projectPrompts = {
+  "demo-project": []
+};
 
-app.get("/", (req,res)=>{
-    res.json({ok:true})
-})
+let projectSteps = {
+  "demo-project": []
+};
 
-app.post("/plugin/connect-code", (req,res)=>{
-    const code = "LM-" + Math.floor(Math.random()*90000+10000)
+app.get("/", (req, res) => {
+  res.json({ ok: true, service: "LazyMan API" });
+});
 
-    connections[code] = {
-        connected:false,
-        lastPing:0
-    }
+// site-ul trimite prompt
+app.post("/project/:id/prompt", (req, res) => {
+  const projectId = req.params.id;
+  const { prompt } = req.body || {};
 
-    res.json({ok:true, code})
-})
+  if (!projectPrompts[projectId]) {
+    projectPrompts[projectId] = [];
+  }
 
-app.post("/plugin/connect", (req,res)=>{
-    const { code } = req.body
+  if (!projectSteps[projectId]) {
+    projectSteps[projectId] = [];
+  }
 
-    if(!connections[code]){
-        return res.json({ok:false})
-    }
+  projectPrompts[projectId].push(prompt);
 
-    connections[code].connected = true
-    connections[code].lastPing = Date.now()
+  // test simplu: backendul generează mereu un part
+  projectSteps[projectId].push({
+    type: "create_part",
+    name: "LazyBlock",
+    size: [20, 1, 20],
+    position: [0, 5, 0],
+    anchored: true
+  });
 
-    res.json({ok:true})
-})
+  res.json({ ok: true });
+});
 
-app.post("/plugin/ping", (req,res)=>{
-    const { code } = req.body
+// pluginul ia update-uri
+app.get("/project/:id/updates", (req, res) => {
+  const projectId = req.params.id;
 
-    if(connections[code]){
-        connections[code].lastPing = Date.now()
-    }
+  if (!projectSteps[projectId]) {
+    return res.json({ ok: true, steps: [] });
+  }
 
-    res.json({ok:true})
-})
+  const steps = projectSteps[projectId];
+  projectSteps[projectId] = [];
 
-app.get("/plugin/status", (req,res)=>{
-    const code = req.query.code
+  res.json({
+    ok: true,
+    steps
+  });
+});
 
-    const c = connections[code]
-
-    if(!c){
-        return res.json({connected:false})
-    }
-
-    const alive = Date.now() - c.lastPing < 300000
-
-    res.json({connected: alive})
-})
-
-app.listen(3000, ()=>{
-    console.log("LazyMan API RUNNING")
-})
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("LazyMan API running");
+});
