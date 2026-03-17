@@ -54,8 +54,8 @@ app.get("/plugin/status", (req,res)=>{
         return res.json({connected:false})
     }
 
-    const alive = Date.now() - c.lastPing < 60000  // ⭐ 60 SEC !!!
-
+    const alive = Date.now() - c.lastPing < 300000   // ⭐ 5 MINUTE
+    
     res.json({connected: alive})
 })
 
