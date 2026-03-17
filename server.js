@@ -15,8 +15,8 @@ app.post("/plugin/connect-code", (req,res)=>{
     const code = "LM-" + Math.floor(Math.random()*90000+10000)
 
     connections[code] = {
-        connected:false,
-        lastPing:0
+        connected:true,
+        lastPing: Date.now()
     }
 
     res.json({ok:true, code})
@@ -26,7 +26,7 @@ app.post("/plugin/connect", (req,res)=>{
     const { code } = req.body
 
     if(!connections[code]){
-        return res.json({ok:false})
+        connections[code] = {}
     }
 
     connections[code].connected = true
@@ -54,7 +54,7 @@ app.get("/plugin/status", (req,res)=>{
         return res.json({connected:false})
     }
 
-    const alive = Date.now() - c.lastPing < 15000
+    const alive = Date.now() - c.lastPing < 60000  // ⭐ 60 SEC !!!
 
     res.json({connected: alive})
 })
