@@ -1,57 +1,70 @@
-const express = require("express")
-const cors = require("cors")
+const express = require("express");
+const cors = require("cors");
 
-const app = express()
-app.use(cors())
-app.use(express.json())
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-// ===== MEMORY DATABASE =====
-let activeCodes = {}
-let connections = {}
+let activeCodes = {};
 
-// TEST
 app.get("/", (req, res) => {
-    res.json({ ok: true, service: "LazyMan API" })
-})
+    res.json({ ok: true, service: "LazyMan API" });
+});
 
-// GENERATE CONNECT CODE
+// GENERATE CODE (SITE)
 app.post("/plugin/connect-code", (req, res) => {
-    const code = "LM-" + Math.floor(Math.random() * 99999)
+
+    const code = "LM-" + Math.floor(10000 + Math.random() * 90000);
 
     activeCodes[code] = {
-        connected: false,
-        projectId: null
-    }
+        connected: false
+    };
 
-    res.json({ ok: true, code })
-})
+    res.json({
+        ok: true,
+        code
+    });
 
-// PLUGIN CONNECT HANDSHAKE
+});
+
+// CONNECT (PLUGIN)
 app.post("/plugin/connect", (req, res) => {
-    const { code } = req.body
+
+    const { code } = req.body;
 
     if (!activeCodes[code]) {
-        return res.json({ ok: false, error: "Invalid code" })
+        return res.json({
+            ok: false,
+            error: "Invalid code"
+        });
     }
 
-    activeCodes[code].connected = true
+    activeCodes[code].connected = true;
 
-    connections["demo-project"] = true
+    res.json({
+        ok: true,
+        token: Math.random().toString(36)
+    });
 
-    res.json({ ok: true, connected: true })
-})
+});
 
-// STATUS CHECK (FOARTE IMPORTANT)
+// STATUS (SITE POLLING)
 app.get("/plugin/status", (req, res) => {
-    const projectId = req.query.projectId
 
-    if (connections[projectId]) {
-        return res.json({ ok: true, connected: true })
+    const code = req.query.code;
+
+    if (!activeCodes[code]) {
+        return res.json({
+            connected: false
+        });
     }
 
-    res.json({ ok: true, connected: false })
-})
+    res.json({
+        connected: activeCodes[code].connected
+    });
+
+});
 
 app.listen(3000, () => {
-    console.log("LazyMan API running")
-})
+    console.log("LazyMan API running");
+});
