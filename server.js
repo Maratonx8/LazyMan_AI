@@ -5,11 +5,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-let projectPrompts = {
+const projectPrompts = {
   "demo-project": []
 };
 
-let projectSteps = {
+const projectSteps = {
   "demo-project": []
 };
 
@@ -21,16 +21,12 @@ app.post("/project/:id/prompt", (req, res) => {
   const projectId = req.params.id;
   const { prompt } = req.body || {};
 
-  if (!projectPrompts[projectId]) {
-    projectPrompts[projectId] = [];
-  }
+  if (!projectPrompts[projectId]) projectPrompts[projectId] = [];
+  if (!projectSteps[projectId]) projectSteps[projectId] = [];
 
-  if (!projectSteps[projectId]) {
-    projectSteps[projectId] = [];
-  }
+  projectPrompts[projectId].push(prompt || "");
 
-  projectPrompts[projectId].push(prompt);
-
+  // test simplu: creează un bloc roșu
   projectSteps[projectId].push({
     type: "create_part",
     name: "LazyBlock",
@@ -50,7 +46,7 @@ app.get("/project/:id/updates", (req, res) => {
     return res.json({ ok: true, steps: [] });
   }
 
-  const steps = projectSteps[projectId];
+  const steps = [...projectSteps[projectId]];
   projectSteps[projectId] = [];
 
   res.json({
