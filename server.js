@@ -1,64 +1,57 @@
-const express = require("express");
-const cors = require("cors");
-const crypto = require("crypto");
+const express = require("express")
+const cors = require("cors")
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const app = express()
+app.use(cors())
+app.use(express.json())
 
-const codes = new Map();
-const sessions = new Map();
+// ===== MEMORY DATABASE =====
+let activeCodes = {}
+let connections = {}
 
-function makeCode() {
-  return "LM-" + Math.floor(10000 + Math.random() * 90000);
-}
+// TEST
+app.get("/", (req, res) => {
+    res.json({ ok: true, service: "LazyMan API" })
+})
 
-function makeToken() {
-  return crypto.randomBytes(24).toString("hex");
-}
-
-app.get("/", (_req, res) => {
-  res.json({ ok: true, service: "LazyMan API" });
-});
-
+// GENERATE CONNECT CODE
 app.post("/plugin/connect-code", (req, res) => {
-  const code = makeCode();
+    const code = "LM-" + Math.floor(Math.random() * 99999)
 
-  codes.set(code, {
-    expiresAt: Date.now() + 5 * 60 * 1000
-  });
+    activeCodes[code] = {
+        connected: false,
+        projectId: null
+    }
 
-  res.json({ ok: true, code });
-});
+    res.json({ ok: true, code })
+})
 
+// PLUGIN CONNECT HANDSHAKE
 app.post("/plugin/connect", (req, res) => {
-  const { code } = req.body || {};
-  const row = codes.get(code);
+    const { code } = req.body
 
-  if (!row) {
-    return res.status(400).json({ ok: false });
-  }
+    if (!activeCodes[code]) {
+        return res.json({ ok: false, error: "Invalid code" })
+    }
 
-  const token = makeToken();
+    activeCodes[code].connected = true
 
-  sessions.set(token, {
-    lastHeartbeat: Date.now()
-  });
+    connections["demo-project"] = true
 
-  res.json({ ok: true, token });
-});
+    res.json({ ok: true, connected: true })
+})
 
-app.post("/plugin/heartbeat", (req, res) => {
-  const { token } = req.body || {};
-  const s = sessions.get(token);
+// STATUS CHECK (FOARTE IMPORTANT)
+app.get("/plugin/status", (req, res) => {
+    const projectId = req.query.projectId
 
-  if (!s) return res.status(401).json({ ok: false });
+    if (connections[projectId]) {
+        return res.json({ ok: true, connected: true })
+    }
 
-  s.lastHeartbeat = Date.now();
-  res.json({ ok: true });
-});
+    res.json({ ok: true, connected: false })
+})
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("LazyMan API running");
-});
+app.listen(3000, () => {
+    console.log("LazyMan API running")
+})
