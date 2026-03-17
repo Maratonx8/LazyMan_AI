@@ -14,10 +14,9 @@ let projectSteps = {
 };
 
 app.get("/", (req, res) => {
-  res.json({ ok: true, service: "LazyMan API" });
+  res.json({ ok: true });
 });
 
-// site-ul trimite prompt
 app.post("/project/:id/prompt", (req, res) => {
   const projectId = req.params.id;
   const { prompt } = req.body || {};
@@ -32,19 +31,18 @@ app.post("/project/:id/prompt", (req, res) => {
 
   projectPrompts[projectId].push(prompt);
 
-  // test simplu: backendul generează mereu un part
   projectSteps[projectId].push({
     type: "create_part",
     name: "LazyBlock",
     size: [20, 1, 20],
     position: [0, 5, 0],
-    anchored: true
+    anchored: true,
+    color: [255, 0, 0]
   });
 
   res.json({ ok: true });
 });
 
-// pluginul ia update-uri
 app.get("/project/:id/updates", (req, res) => {
   const projectId = req.params.id;
 
